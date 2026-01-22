@@ -1,4 +1,4 @@
-from planner import planner
+from agent_loop import run_agent
 
 dbt_sql = """
 select
@@ -10,8 +10,7 @@ join enrollments using (member_id)
 
 question = "Review this dbt model for architectural issues."
 
-result = planner(question, dbt_model_sql=dbt_sql)
+state = run_agent(question, dbt_model_sql=dbt_sql)
 
-print("\nANSWER:\n", result["answer"])
-print("\nDBT ANALYSIS:\n", result["dbt_analysis"])
-print("\nSOURCES:\n", result["sources"])
+print("\n✅ FINAL ANSWER:\n")
+print(state.final_answer)

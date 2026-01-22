@@ -1,43 +1,51 @@
 from agent_tools import architecture_rag_tool
+from dbt_analyzer import analyze_dbt_model
 from langchain_community.llms import Ollama
 
-# Initialize LLM
-llm = Ollama(model="phi3")  # or your preferred Ollama model
+llm = Ollama(model="phi3")
 
 SYSTEM_PROMPT = """
 You are a Principal Data Architect Copilot specializing in healthcare.
 
-Your job:
-- Reason about data architecture questions
-- Use architecture knowledge (standards, canonical models, checklists)
-- Suggest actions, identify risks, and explain tradeoffs
-- Cite sources when possible
+When reviewing dbt models:
+- Validate grain
+- Enforce dbt layering standards
+- Flag anti-patterns
+- Suggest architectural improvements
 """
 
-def planner(question: str):
-    """
-    Returns a reasoned response using RAG context.
-    """
-    # Step 1: retrieve relevant architecture knowledge
+def planner(question: str, dbt_model_sql: str | None = None):
+    print("📐 Architect Copilot thinking...")
+
     rag_result = architecture_rag_tool(question)
 
-    # Step 2: feed into LLM
+    dbt_analysis = None
+    if dbt_model_sql:
+        print("🔍 Analyzing dbt model...")
+        dbt_analysis = analyze_dbt_model(dbt_model_sql)
+
     prompt = f"""
 {SYSTEM_PROMPT}
 
-Context:
+Architecture Context:
 {rag_result['context']}
+
+dbt Analysis:
+{dbt_analysis}
 
 Question:
 {question}
 
-Please answer clearly, and cite sources where possible.
+Provide:
+- Findings
+- Risks
+- Recommendations
 """
 
     response = llm.invoke(prompt)
-    answer = response.strip()
 
     return {
-        "answer": answer,
-        "sources": rag_result['sources']
+        "answer": response.strip(),
+        "sources": rag_result["sources"],
+        "dbt_analysis": dbt_analysis
     }
